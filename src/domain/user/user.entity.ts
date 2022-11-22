@@ -1,10 +1,18 @@
 import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
-import { IsEmail, IsMobilePhone, IsNotEmpty, IsString } from 'class-validator';
+import { IsEmail, IsNotEmpty, IsString } from 'class-validator';
 
 @Entity()
 export class User {
   @PrimaryGeneratedColumn()
   id: number;
+
+  @Column({ length: 100 })
+  @IsString()
+  provider: string;
+
+  @Column({ length: 100 })
+  @IsString()
+  providerId: string;
 
   @IsString()
   @IsNotEmpty()
@@ -15,13 +23,4 @@ export class User {
   @IsNotEmpty()
   @Column()
   email: string;
-
-  @IsNotEmpty()
-  @Column()
-  password: string;
-
-  @IsMobilePhone()
-  @IsNotEmpty()
-  @Column()
-  phone: string;
 }
