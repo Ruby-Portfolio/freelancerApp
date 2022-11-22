@@ -7,6 +7,7 @@ import { User } from './domain/user/user.entity';
 import { Freelancer } from './domain/freelancer/freelancer.entity';
 import { JobPosting } from './domain/jobPosting/jobPosting.entity';
 import { SupportHistory } from './domain/supportHistory/supportHistory.entity';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { SupportHistory } from './domain/supportHistory/supportHistory.entity';
       synchronize: true,
       logging: true,
     }),
+    AuthModule,
   ],
   controllers: [AppController],
   providers: [AppService],
