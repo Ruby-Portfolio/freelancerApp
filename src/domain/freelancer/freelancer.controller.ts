@@ -1,8 +1,8 @@
-import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Post, Query, UseGuards } from '@nestjs/common';
 import { FreelancerService } from './freelancer.service';
 import { JwtGuard } from '../../auth/jwt/jwt.guard';
 import { CurrentUser } from '../../auth/auth.decorator';
-import { FreelancerAdd } from './freelancer.request';
+import { FreelancerAdd, FreelancerSearch } from './freelancer.request';
 
 @Controller('freelancers')
 export class FreelancerController {
@@ -17,8 +17,9 @@ export class FreelancerController {
     await this.freelancerService.addFreelancer(user, freelancerAdd);
   }
 
+  @UseGuards(JwtGuard)
   @Get()
-  async getFreelancer() {
-    return 'hello';
+  async getFreelancer(@Query() freelancerSearch: FreelancerSearch) {
+    return this.freelancerService.getFreelancers(freelancerSearch);
   }
 }

@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { FreelancerRepository } from './freelancer.repository';
 import { User } from '../user/user.entity';
 import { FreelancerAdd, FreelancerSearch } from './freelancer.request';
-import { Freelancer } from './freelancer.entity';
+import { FreelancerList } from './freelancer.response';
 
 @Injectable()
 export class FreelancerService {
@@ -15,7 +15,11 @@ export class FreelancerService {
     });
   }
 
-  async getFreelancers(freelancerSearch: FreelancerSearch) {}
+  async getFreelancers(
+    freelancerSearch: FreelancerSearch,
+  ): Promise<FreelancerList[]> {
+    return this.freelancerRepository.searchFreelancer(freelancerSearch);
+  }
 
   getFreelancerDetail() {}
   updateFreelancerState() {}
