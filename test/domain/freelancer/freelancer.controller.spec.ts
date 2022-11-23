@@ -19,6 +19,7 @@ import { FreelancerAdd } from '../../../src/domain/freelancer/freelancer.request
 import { pipeConfig } from '../../../src/config/pipeConfig';
 import { interceptorConfig } from '../../../src/config/interceptorConfig';
 import { FreelancerErrorMessage } from '../../../src/domain/freelancer/freelancer.message';
+import { Position } from '../../../src/domain/freelancer/freelancer.enum';
 
 describe('FreelancerController', () => {
   let app: INestApplication;
@@ -87,6 +88,7 @@ describe('FreelancerController', () => {
             aboutMe: '개발자 Ruby 입니다.',
             career: '엠브이소프텍 1년 7개월',
             skills: 'Java',
+            position: Position.BACK_END,
           })
           .expect(401);
       });
@@ -101,6 +103,7 @@ describe('FreelancerController', () => {
               aboutMe: '',
               career: '',
               skills: '',
+              position: '이상한포지션',
             })
             .set('Cookie', [`Authentication=${token}`])
             .expect(400);
@@ -111,6 +114,9 @@ describe('FreelancerController', () => {
           );
           expect(errorMessages).toContain(FreelancerErrorMessage.CAREER_EMPTY);
           expect(errorMessages).toContain(FreelancerErrorMessage.SKILLS_EMPTY);
+          expect(errorMessages).toContain(
+            FreelancerErrorMessage.POSITION_INVALID,
+          );
         });
       });
 
@@ -119,6 +125,7 @@ describe('FreelancerController', () => {
           aboutMe: '개발자 Ruby 입니다.',
           career: '엠브이소프텍 1년 7개월',
           skills: 'Java',
+          position: Position.BACK_END,
         };
 
         await request(app.getHttpServer())
@@ -132,6 +139,7 @@ describe('FreelancerController', () => {
         expect(freelancers[0].aboutMe).toEqual(freelancerAdd.aboutMe);
         expect(freelancers[0].career).toEqual(freelancerAdd.career);
         expect(freelancers[0].skills).toEqual(freelancerAdd.skills);
+        expect(freelancers[0].position).toEqual(freelancerAdd.position);
         expect(freelancers[0].userId).toEqual(user.id);
       });
     });

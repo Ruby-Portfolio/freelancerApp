@@ -1,7 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { FreelancerRepository } from './freelancer.repository';
 import { User } from '../user/user.entity';
-import { FreelancerAdd } from './freelancer.request';
+import { FreelancerAdd, FreelancerSearch } from './freelancer.request';
+import { Freelancer } from './freelancer.entity';
 
 @Injectable()
 export class FreelancerService {
@@ -13,7 +14,9 @@ export class FreelancerService {
       user,
     });
   }
-  getFreelancers() {}
+
+  async getFreelancers(freelancerSearch: FreelancerSearch) {}
+
   getFreelancerDetail() {}
   updateFreelancerState() {}
   deleteFreelancer() {}
