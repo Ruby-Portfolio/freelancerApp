@@ -14,7 +14,9 @@ export class AuthController {
 
   @Get('google')
   @UseGuards(AuthGuard('google'))
-  googleLogin() {}
+  googleLogin() {
+    // 구글 로그인 페이지로 리다이렉트 처리
+  }
 
   @Get('google/callback')
   @UseGuards(AuthGuard('google'))
