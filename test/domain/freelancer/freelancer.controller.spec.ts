@@ -24,6 +24,7 @@ import { interceptorConfig } from '../../../src/config/interceptorConfig';
 import { FreelancerErrorMessage } from '../../../src/domain/freelancer/freelancer.message';
 import { Position } from '../../../src/domain/freelancer/freelancer.enum';
 import { CommonErrorMessage } from '../../../src/common/error/common.message';
+import { FreelancerDetail } from '../../../src/domain/freelancer/freelancer.response';
 
 describe('FreelancerController', () => {
   let app: INestApplication;
@@ -264,6 +265,77 @@ describe('FreelancerController', () => {
           expect(freelancers.length).toEqual(2);
           expect(freelancers[0].username).toEqual(user.name);
           expect(freelancers[0].position).toEqual(Position.FRONT_END);
+        });
+      });
+    });
+  });
+
+  describe('/GET /api/freelancers/:userId', () => {
+    describe('인증이 되지 않은 사용자의 요청', () => {
+      test('트', async () => {
+        await request(app.getHttpServer())
+          .get(`/api/freelancers/3`)
+          .expect(401);
+      });
+    });
+    describe('인증된 사용자의 요청', () => {
+      let freelancer: Freelancer;
+      beforeAll(async () => {
+        freelancer = await freelancerRepository.save({
+          aboutMe: `개발자 Ruby 입니다.`,
+          career: `개발 경력 1년 7개월`,
+          skills: 'javaScript',
+          position: Position.BACK_END,
+          user,
+        });
+      });
+
+      describe('요청 실패', () => {
+        test('id 값이 숫자가 아닐 경우 400 응답', async () => {
+          const res = await request(app.getHttpServer())
+            .get(`/api/freelancers/userId`)
+            .set('Cookie', [`Authentication=${token}`])
+            .expect(400);
+
+          expect(res.body.message).toContain(CommonErrorMessage.INVALID_ID);
+        });
+
+        test('id 값이 0 이하의 숫자일 경우 400 응답', async () => {
+          const res = await request(app.getHttpServer())
+            .get(`/api/freelancers/0`)
+            .set('Cookie', [`Authentication=${token}`])
+            .expect(400);
+
+          expect(res.body.message).toContain(CommonErrorMessage.INVALID_ID);
+        });
+
+        test('존재하지 않는 프리랜서 id 로 요청시 404 응답', async () => {
+          const res = await request(app.getHttpServer())
+            .get(`/api/freelancers/${freelancer.id + 999}`)
+            .set('Cookie', [`Authentication=${token}`])
+            .expect(404);
+
+          expect(res.body.message).toEqual(
+            FreelancerErrorMessage.FREELANCER_NOTFOUND,
+          );
+        });
+      });
+
+      describe('요청 성공', () => {
+        test('프리랜서 정보 상세 조회', async () => {
+          const res = await request(app.getHttpServer())
+            .get(`/api/freelancers/${freelancer.id}`)
+            .set('Cookie', [`Authentication=${token}`])
+            .expect(200);
+
+          const freelancerDetail: FreelancerDetail = res.body;
+
+          expect(freelancerDetail.username).toEqual(user.name);
+          expect(freelancerDetail.email).toEqual(user.email);
+          expect(freelancerDetail.position).toEqual(freelancer.position);
+          expect(freelancerDetail.aboutMe).toEqual(freelancer.aboutMe);
+          expect(freelancerDetail.career).toEqual(freelancer.career);
+          expect(freelancerDetail.skills).toEqual(freelancer.skills);
         });
       });
     });
