@@ -148,10 +148,10 @@ describe('FreelancerController', () => {
       });
 
       describe('요청 성공', () => {
-        const cacheTestKey = 'cacheTestKey';
         beforeAll(() => {
           cacheManager.reset();
-          cacheManager.set(cacheTestKey, 'cacheTest');
+          cacheManager.set('freelancer1', { test: 'test' });
+          cacheManager.set('freelancer2', { test: 'test' });
         });
 
         test('요청 성공', async () => {
@@ -176,7 +176,7 @@ describe('FreelancerController', () => {
           expect(freelancers[0].position).toEqual(freelancerAdd.position);
           expect(freelancers[0].userId).toEqual(user.id);
 
-          const cacheData = await cacheManager.get('cacheTestKey');
+          const cacheData = await cacheManager.get('freelancer1');
           expect(cacheData).toBeNull();
         });
       });
