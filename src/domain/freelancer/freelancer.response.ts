@@ -1,13 +1,15 @@
 import { Position } from './freelancer.enum';
 
-// export class FreelancerList extends PickType(Freelancer, [
-//   'aboutMe',
-//   'career',
-//   'skills',
-//   'position',
-// ] as const) {}
-
-export class FreelancerList {
+export class FreelancerNameAndPosition {
   username: string;
   position: Position;
+}
+
+export class FreelancerDetail {
+  username: string;
+  email: string;
+  position: Position;
+  aboutMe: string;
+  career: string;
+  skills: string;
 }

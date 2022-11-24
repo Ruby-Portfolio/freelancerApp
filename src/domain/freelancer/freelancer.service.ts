@@ -2,7 +2,11 @@ import { Injectable } from '@nestjs/common';
 import { FreelancerRepository } from './freelancer.repository';
 import { User } from '../user/user.entity';
 import { FreelancerAdd, FreelancerSearch } from './freelancer.request';
-import { FreelancerList } from './freelancer.response';
+import {
+  FreelancerDetail,
+  FreelancerNameAndPosition,
+} from './freelancer.response';
+import { FreelancerNotFoundException } from './freelancer.exception';
 
 @Injectable()
 export class FreelancerService {
@@ -17,11 +21,21 @@ export class FreelancerService {
 
   async getFreelancers(
     freelancerSearch: FreelancerSearch,
-  ): Promise<FreelancerList[]> {
+  ): Promise<FreelancerNameAndPosition[]> {
     return this.freelancerRepository.searchFreelancer(freelancerSearch);
   }
 
-  getFreelancerDetail() {}
+  async getFreelancerDetail(freelancerId: number): Promise<FreelancerDetail> {
+    const freelancerDetail = await this.freelancerRepository.findDetailById(
+      freelancerId,
+    );
+
+    if (freelancerDetail) {
+      return freelancerDetail;
+    }
+
+    throw new FreelancerNotFoundException();
+  }
   updateFreelancerState() {}
   deleteFreelancer() {}
   proposeFreelancer() {}
