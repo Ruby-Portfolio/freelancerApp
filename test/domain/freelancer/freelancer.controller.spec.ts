@@ -1,5 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { INestApplication } from '@nestjs/common';
+import {
+  CACHE_MANAGER,
+  CacheModule,
+  HttpStatus,
+  INestApplication,
+} from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { User } from '../../../src/domain/user/user.entity';
@@ -24,15 +29,23 @@ import { interceptorConfig } from '../../../src/config/interceptorConfig';
 import { FreelancerErrorMessage } from '../../../src/domain/freelancer/freelancer.message';
 import { Position } from '../../../src/domain/freelancer/freelancer.enum';
 import { CommonErrorMessage } from '../../../src/common/error/common.message';
-import { FreelancerDetail } from '../../../src/domain/freelancer/freelancer.response';
+import {
+  FreelancerDetail,
+  FreelancerNameAndPosition,
+} from '../../../src/domain/freelancer/freelancer.response';
+import * as redisStore from 'cache-manager-ioredis';
+import { Cache } from 'cache-manager';
+import { FreelancerService } from '../../../src/domain/freelancer/freelancer.service';
 
 describe('FreelancerController', () => {
   let app: INestApplication;
   let userRepository: UserRepository;
   let freelancerRepository: FreelancerRepository;
+  let freelancerService: FreelancerService;
   let jwtService: JwtService;
   let user: User;
   let token: string;
+  let cacheManager: Cache;
 
   beforeAll(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -43,7 +56,7 @@ describe('FreelancerController', () => {
         TypeOrmModule.forRoot({
           type: 'mysql',
           host: process.env.DB_HOST,
-          port: parseInt(process.env.DB_PORT),
+          port: +process.env.DB_PORT,
           username: process.env.DB_USERNAME,
           password: process.env.DB_PASSWORD,
           database: process.env.DB_DATABASE,
@@ -51,6 +64,13 @@ describe('FreelancerController', () => {
           charset: 'utf8mb4',
           synchronize: true,
           logging: true,
+        }),
+        CacheModule.register({
+          store: redisStore,
+          host: process.env.REDIS_HOST,
+          port: process.env.REDIS_PORT,
+          ttl: +process.env.REDIS_TTL,
+          isGlobal: true,
         }),
         AuthModule,
         FreelancerModule,
@@ -71,7 +91,9 @@ describe('FreelancerController', () => {
     userRepository = module.get<UserRepository>(UserRepository);
     freelancerRepository =
       module.get<FreelancerRepository>(FreelancerRepository);
+    freelancerService = module.get<FreelancerService>(FreelancerService);
     jwtService = module.get<JwtService>(JwtService);
+    cacheManager = module.get(CACHE_MANAGER);
 
     await freelancerRepository.delete({});
     await userRepository.delete({});
@@ -95,7 +117,7 @@ describe('FreelancerController', () => {
             skills: 'Java',
             position: Position.BACK_END,
           })
-          .expect(401);
+          .expect(HttpStatus.UNAUTHORIZED);
       });
     });
 
@@ -111,7 +133,7 @@ describe('FreelancerController', () => {
               position: '이상한포지션',
             })
             .set('Cookie', [`Authentication=${token}`])
-            .expect(400);
+            .expect(HttpStatus.BAD_REQUEST);
 
           const errorMessages = res.body.message;
           expect(errorMessages).toContain(
@@ -125,27 +147,38 @@ describe('FreelancerController', () => {
         });
       });
 
-      test('요청 성공', async () => {
-        const freelancerAdd: FreelancerAdd = {
-          aboutMe: '개발자 Ruby 입니다.',
-          career: '엠브이소프텍 1년 7개월',
-          skills: 'Java',
-          position: Position.BACK_END,
-        };
+      describe('요청 성공', () => {
+        const cacheTestKey = 'cacheTestKey';
+        beforeAll(() => {
+          cacheManager.reset();
+          cacheManager.set(cacheTestKey, 'cacheTest');
+        });
 
-        await request(app.getHttpServer())
-          .post('/api/freelancers')
-          .send(freelancerAdd)
-          .set('Cookie', [`Authentication=${token}`])
-          .expect(201);
+        test('요청 성공', async () => {
+          const freelancerAdd: FreelancerAdd = {
+            aboutMe: '개발자 Ruby 입니다.',
+            career: '엠브이소프텍 1년 7개월',
+            skills: 'Java',
+            position: Position.BACK_END,
+          };
 
-        const freelancers = await freelancerRepository.findBy({});
-        expect(freelancers.length).toEqual(1);
-        expect(freelancers[0].aboutMe).toEqual(freelancerAdd.aboutMe);
-        expect(freelancers[0].career).toEqual(freelancerAdd.career);
-        expect(freelancers[0].skills).toEqual(freelancerAdd.skills);
-        expect(freelancers[0].position).toEqual(freelancerAdd.position);
-        expect(freelancers[0].userId).toEqual(user.id);
+          await request(app.getHttpServer())
+            .post('/api/freelancers')
+            .send(freelancerAdd)
+            .set('Cookie', [`Authentication=${token}`])
+            .expect(201);
+
+          const freelancers = await freelancerRepository.findBy({});
+          expect(freelancers.length).toEqual(1);
+          expect(freelancers[0].aboutMe).toEqual(freelancerAdd.aboutMe);
+          expect(freelancers[0].career).toEqual(freelancerAdd.career);
+          expect(freelancers[0].skills).toEqual(freelancerAdd.skills);
+          expect(freelancers[0].position).toEqual(freelancerAdd.position);
+          expect(freelancers[0].userId).toEqual(user.id);
+
+          const cacheData = await cacheManager.get('cacheTestKey');
+          expect(cacheData).toBeNull();
+        });
       });
     });
   });
@@ -159,7 +192,7 @@ describe('FreelancerController', () => {
             search: '백엔드',
             page: 0,
           })
-          .expect(401);
+          .expect(HttpStatus.UNAUTHORIZED);
       });
     });
 
@@ -172,7 +205,7 @@ describe('FreelancerController', () => {
               page: -1,
             })
             .set('Cookie', [`Authentication=${token}`])
-            .expect(400);
+            .expect(HttpStatus.BAD_REQUEST);
 
           expect(res.body.message).toContain(CommonErrorMessage.INVALID_PAGE);
         });
@@ -184,7 +217,7 @@ describe('FreelancerController', () => {
               page: '페이지 번호',
             })
             .set('Cookie', [`Authentication=${token}`])
-            .expect(400);
+            .expect(HttpStatus.BAD_REQUEST);
 
           expect(res.body.message).toContain(CommonErrorMessage.INVALID_PAGE);
         });
@@ -221,7 +254,7 @@ describe('FreelancerController', () => {
             .get('/api/freelancers')
             .query(freelancerSearch)
             .set('Cookie', [`Authentication=${token}`])
-            .expect(200);
+            .expect(HttpStatus.OK);
 
           const freelancers = res.body;
 
@@ -239,7 +272,7 @@ describe('FreelancerController', () => {
             .get('/api/freelancers')
             .query(freelancerSearch)
             .set('Cookie', [`Authentication=${token}`])
-            .expect(200);
+            .expect(HttpStatus.OK);
 
           const freelancers = res.body;
 
@@ -258,13 +291,51 @@ describe('FreelancerController', () => {
             .get('/api/freelancers')
             .query(freelancerSearch)
             .set('Cookie', [`Authentication=${token}`])
-            .expect(200);
+            .expect(HttpStatus.OK);
 
           const freelancers = res.body;
 
           expect(freelancers.length).toEqual(2);
           expect(freelancers[0].username).toEqual(user.name);
           expect(freelancers[0].position).toEqual(Position.FRONT_END);
+        });
+
+        describe('캐시 조회', () => {
+          let agent;
+          let freelancerSearch: FreelancerSearch;
+          let freelancers: FreelancerNameAndPosition[];
+
+          beforeAll(async () => {
+            freelancerSearch = {
+              keyword: '프론트',
+              page: 1,
+            };
+
+            await cacheManager.reset();
+            agent = await request.agent(app.getHttpServer());
+            const res = await agent
+              .get('/api/freelancers')
+              .query(freelancerSearch)
+              .set('Cookie', [`Authentication=${token}`])
+              .expect(HttpStatus.OK);
+            freelancers = res.body;
+          });
+
+          test('캐시에 저장된 데이터가 있을 경우 캐시에서 조회', async () => {
+            jest
+              .spyOn(freelancerRepository, 'searchFreelancer')
+              .mockResolvedValue(Promise.resolve([]));
+
+            const res = await agent
+              .get('/api/freelancers')
+              .query(freelancerSearch)
+              .set('Cookie', [`Authentication=${token}`])
+              .expect(HttpStatus.OK);
+
+            expect(JSON.stringify(res.body)).toEqual(
+              JSON.stringify(freelancers),
+            );
+          });
         });
       });
     });
@@ -275,7 +346,7 @@ describe('FreelancerController', () => {
       test('인증이 되지 않은 사용자의 요청시 401 응답', async () => {
         await request(app.getHttpServer())
           .get(`/api/freelancers/3`)
-          .expect(401);
+          .expect(HttpStatus.UNAUTHORIZED);
       });
     });
     describe('인증된 사용자의 요청', () => {
@@ -295,7 +366,7 @@ describe('FreelancerController', () => {
           const res = await request(app.getHttpServer())
             .get(`/api/freelancers/userId`)
             .set('Cookie', [`Authentication=${token}`])
-            .expect(400);
+            .expect(HttpStatus.BAD_REQUEST);
 
           expect(res.body.message).toContain(CommonErrorMessage.INVALID_ID);
         });
@@ -304,7 +375,7 @@ describe('FreelancerController', () => {
           const res = await request(app.getHttpServer())
             .get(`/api/freelancers/0`)
             .set('Cookie', [`Authentication=${token}`])
-            .expect(400);
+            .expect(HttpStatus.BAD_REQUEST);
 
           expect(res.body.message).toContain(CommonErrorMessage.INVALID_ID);
         });
@@ -313,7 +384,7 @@ describe('FreelancerController', () => {
           const res = await request(app.getHttpServer())
             .get(`/api/freelancers/${freelancer.id + 999}`)
             .set('Cookie', [`Authentication=${token}`])
-            .expect(404);
+            .expect(HttpStatus.NOT_FOUND);
 
           expect(res.body.message).toEqual(
             FreelancerErrorMessage.FREELANCER_NOTFOUND,
@@ -326,7 +397,7 @@ describe('FreelancerController', () => {
           const res = await request(app.getHttpServer())
             .get(`/api/freelancers/${freelancer.id}`)
             .set('Cookie', [`Authentication=${token}`])
-            .expect(200);
+            .expect(HttpStatus.OK);
 
           const freelancerDetail: FreelancerDetail = res.body;
 
