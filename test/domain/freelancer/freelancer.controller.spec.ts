@@ -272,7 +272,7 @@ describe('FreelancerController', () => {
 
   describe('/GET /api/freelancers/:userId', () => {
     describe('인증이 되지 않은 사용자의 요청', () => {
-      test('트', async () => {
+      test('인증이 되지 않은 사용자의 요청시 401 응답', async () => {
         await request(app.getHttpServer())
           .get(`/api/freelancers/3`)
           .expect(401);

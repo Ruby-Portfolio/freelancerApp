@@ -36,7 +36,6 @@ export class FreelancerService {
 
     throw new FreelancerNotFoundException();
   }
-  updateFreelancerState() {}
-  deleteFreelancer() {}
+
   proposeFreelancer() {}
 }
