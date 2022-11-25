@@ -1,3 +1,10 @@
+:doctype: book
+:icons: font
+:source-highlighter: highlightjs
+:toc: left
+:toclevels: 3
+:sectlinks:
+
 == 개요
 * 프리랜서 채용 공고 서비스 개발
 
@@ -88,6 +95,9 @@ page : 페이지 번호
 |===
 
 == 테스트
+* link:https://github.com/Ruby-Toys/freelancerApp/blob/develop/test/domain/freelancer/freelancer.repository.spec.ts[조회 쿼리 단위 테스트]
+* link:https://github.com/Ruby-Toys/freelancerApp/blob/develop/test/domain/freelancer/freelancer.cache.spec.ts[캐시 테스트]
+* link:https://github.com/Ruby-Toys/freelancerApp/blob/develop/test/domain/freelancer/freelancer.controller.spec.ts[통합 테스트]
 
 === 테스트 전체 실행 결과
 
