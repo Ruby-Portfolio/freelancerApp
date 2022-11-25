@@ -109,7 +109,7 @@ describe('FreelancerController', () => {
   describe('/POST /api/freelancers', () => {
     describe('인증이 되지 않은 사용자의 요청', () => {
       test('인증이 되지 않은 사용자의 요청시 401 응답', async () => {
-        await request(app.getHttpServer())
+        return request(app.getHttpServer())
           .post('/api/freelancers')
           .send({
             aboutMe: '개발자 Ruby 입니다.',
@@ -148,10 +148,10 @@ describe('FreelancerController', () => {
       });
 
       describe('요청 성공', () => {
-        beforeAll(() => {
-          cacheManager.reset();
-          cacheManager.set('freelancer1', { test: 'test' });
-          cacheManager.set('freelancer2', { test: 'test' });
+        beforeAll(async () => {
+          await cacheManager.reset();
+          await cacheManager.set('freelancer1', { test: 'test' });
+          await cacheManager.set('freelancer2', { test: 'test' });
         });
 
         test('요청 성공', async () => {
@@ -186,7 +186,7 @@ describe('FreelancerController', () => {
   describe('/GET /api/freelancers', () => {
     describe('인증이 되지 않은 사용자의 요청', () => {
       test('인증이 되지 않은 사용자의 요청시 401 응답', async () => {
-        await request(app.getHttpServer())
+        return request(app.getHttpServer())
           .get('/api/freelancers')
           .send({
             search: '백엔드',
@@ -223,9 +223,9 @@ describe('FreelancerController', () => {
         });
       });
       describe('요청 성공', () => {
-        beforeAll(() => {
+        beforeAll(async () => {
           for (let i = 0; i < 12; i++) {
-            freelancerRepository.insert({
+            await freelancerRepository.insert({
               aboutMe: `개발자 ${i}입니다.`,
               career: `개발 경력 ${i}개월`,
               skills: 'javaScript',
@@ -235,7 +235,7 @@ describe('FreelancerController', () => {
           }
 
           for (let i = 0; i < 12; i++) {
-            freelancerRepository.insert({
+            await freelancerRepository.insert({
               aboutMe: `개발자 ${i}입니다.`,
               career: `개발 경력 ${i}개월`,
               skills: 'C#',
@@ -344,7 +344,7 @@ describe('FreelancerController', () => {
   describe('/GET /api/freelancers/:userId', () => {
     describe('인증이 되지 않은 사용자의 요청', () => {
       test('인증이 되지 않은 사용자의 요청시 401 응답', async () => {
-        await request(app.getHttpServer())
+        return request(app.getHttpServer())
           .get(`/api/freelancers/3`)
           .expect(HttpStatus.UNAUTHORIZED);
       });
