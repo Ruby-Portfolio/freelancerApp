@@ -18,7 +18,7 @@ export class FreelancerCacheService {
   }
 
   /**
-   * 검색어와 페이지 번호를 조핮한 캐시 키 생성
+   * 검색어와 페이지 번호를 조합한 캐시 키 생성
    * @param keyword
    * @param page
    */
