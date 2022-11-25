@@ -25,9 +25,7 @@
 ** 프리랜서 id 를 입력받아 해당하는 프리랜서 정보를 상세 조회
 ** 캐시에서 조회. 캐시에 데이터가 없을 경우에는 DB 에서 조회한 후 해당 데이터를 캐시에 저장
 
-== ER Diagram
-image:image/er-diagram.png[image/er-diagram.png]
-
+== 테이블
 === 회원
 * provider: 인증 Provider
 * providerId : providerId
@@ -96,7 +94,7 @@ page : 페이지 번호
 
 == 테스트
 * link:https://github.com/Ruby-Toys/freelancerApp/blob/develop/test/domain/freelancer/freelancer.repository.spec.ts[조회 쿼리 단위 테스트]
-* link:https://github.com/Ruby-Toys/freelancerApp/blob/develop/test/domain/freelancer/freelancer.cache.spec.ts[캐시 테스트]
+* link:https://github.com/Ruby-Toys/freelancerApp/blob/develop/test/domain/freelancer/freelancer.cache.spec.ts[캐시 조회 테스트]
 * link:https://github.com/Ruby-Toys/freelancerApp/blob/develop/test/domain/freelancer/freelancer.controller.spec.ts[통합 테스트]
 
 === 테스트 전체 실행 결과
